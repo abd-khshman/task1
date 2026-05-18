@@ -1,132 +1,114 @@
 using System;
 using System.Collections.Generic;
 
-namespace EmployeeBonusSystem
+namespace RestockFeeSystem
 {
-    // Custom Exception
-    class InvalidEmployeeDataException : Exception
-    {
-        public InvalidEmployeeDataException(string message) : base(message)
-        {
-        }
-    }
-
-    class Employee
-    {
-        public int EmployeeId;
-        public string Name;
-        public int YearsOfService;
-        public double Salary;
-        public int PerformanceRating;
-        public bool IsExecutive;
-    }
-
     class Program
     {
-        // Main CalculateBonus Method
-        static double CalculateBonus(double salary, int yearsOfService, int performanceRating)
+        // Method to calculate fee
+        static double CalculateRestockFee(double itemPrice, int conditionCode)
         {
-            // Validation
-            if (salary < 0 || yearsOfService < 0 || performanceRating < 1 || performanceRating > 5)
+            double multiplier = 0;
+
+            // Switch statement
+            switch (conditionCode)
             {
-                throw new InvalidEmployeeDataException("Invalid employee data detected.");
+                case 1:
+                    multiplier = 0.0;
+                    break;
+
+                case 2:
+                    multiplier = 0.10;
+                    break;
+
+                case 3:
+                    multiplier = 0.25;
+                    break;
+
+                case 4:
+                    multiplier = 0.50;
+                    break;
+
+                default:
+                    throw new ArgumentException("Invalid condition code!");
             }
 
-            double bonus = 0;
+            // Raw fee
+            double rawFee = itemPrice * multiplier;
 
-            // Bonus percentage
-            if (yearsOfService < 1)
+            // Manual rounding to nearest cent
+            double temp = rawFee * 100;
+
+            int rounded = (int)temp;
+
+            // if there is remaining decimal
+            if (temp > rounded)
             {
-                bonus = 0;
-            }
-            else if (yearsOfService >= 1 && yearsOfService <= 2)
-            {
-                bonus = salary * 0.05;
-            }
-            else if (yearsOfService >= 3 && yearsOfService <= 5)
-            {
-                bonus = salary * 0.10;
-            }
-            else
-            {
-                bonus = salary * 0.15;
+                rounded = rounded + 1;
             }
 
-            // Performance adjustment
-            if (performanceRating < 3)
-            {
-                bonus = bonus * 0.5;
-            }
-            else if (performanceRating == 5)
-            {
-                bonus = bonus * 2;
-            }
+            double finalFee = rounded / 100.0;
 
-            return bonus;
+            return finalFee;
         }
 
-        // Overloaded Method
-        static double CalculateBonus(double salary, int yearsOfService, int performanceRating, bool isExecutive)
+        // Process all returns
+        static double ProcessReturns(List<double> prices, List<int> conditions)
         {
-            double finalBonus = CalculateBonus(salary, yearsOfService, performanceRating);
+            double totalFees = 0;
 
-            if (isExecutive == true)
+            for (int i = 0; i < prices.Count; i++)
             {
-                finalBonus += 1000;
+                double fee = CalculateRestockFee(prices[i], conditions[i]);
+
+                totalFees += fee;
             }
 
-            return finalBonus;
+            return totalFees;
         }
 
         static void Main(string[] args)
         {
-            List<Employee> employees = new List<Employee>()
+            // Sample data
+            List<double> prices = new List<double>()
             {
-                new Employee(){ EmployeeId = 1, Name = "Ahmad", YearsOfService = 2, Salary = 5000, PerformanceRating = 4, IsExecutive = false },
-
-                new Employee(){ EmployeeId = 2, Name = "Sara", YearsOfService = 6, Salary = 8000, PerformanceRating = 5, IsExecutive = true },
-
-                new Employee(){ EmployeeId = 3, Name = "Omar", YearsOfService = 0, Salary = 4500, PerformanceRating = 2, IsExecutive = false },
-
-                // Invalid salary
-                new Employee(){ EmployeeId = 4, Name = "Lina", YearsOfService = 3, Salary = -3000, PerformanceRating = 4, IsExecutive = false },
-
-                // Invalid rating
-                new Employee(){ EmployeeId = 5, Name = "Khaled", YearsOfService = 4, Salary = 7000, PerformanceRating = 6, IsExecutive = true },
-
-                new Employee(){ EmployeeId = 6, Name = "Rama", YearsOfService = 8, Salary = 9000, PerformanceRating = 5, IsExecutive = true }
+                120.75,
+                89.99,
+                45.50,
+                100.10
             };
 
-            foreach (Employee emp in employees)
+            List<int> conditions = new List<int>()
             {
-                try
-                {
-                    double calculatedBonus;
+                2,
+                3,
+                4,
+                7 // invalid code intentionally
+            };
 
-                    // Executive check
-                    if (emp.IsExecutive)
-                    {
-                        calculatedBonus = CalculateBonus(emp.Salary, emp.YearsOfService, emp.PerformanceRating, emp.IsExecutive);
-                    }
-                    else
-                    {
-                        calculatedBonus = CalculateBonus(emp.Salary, emp.YearsOfService, emp.PerformanceRating);
-                    }
+            bool logFileOpened = false;
 
-                    Console.WriteLine("Employee ID: " + emp.EmployeeId);
-                    Console.WriteLine("Name: " + emp.Name);
-                    Console.WriteLine("Bonus: $" + calculatedBonus.ToString("F2"));
-                    Console.WriteLine("------------------------");
-                }
-                catch (InvalidEmployeeDataException ex)
-                {
-                    Console.WriteLine("Error with employee: " + emp.Name);
-                    Console.WriteLine(ex.Message);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Unexpected Error: " + ex.Message);
-                }
+            try
+            {
+                // simulate opening log file
+                logFileOpened = true;
+
+                Console.WriteLine("Log file opened.");
+
+                double total = ProcessReturns(prices, conditions);
+
+                Console.WriteLine("Total Fees: $" + total);
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+            finally
+            {
+                // close resource
+                logFileOpened = false;
+
+                Console.WriteLine("Log file closed.");
             }
 
             Console.ReadLine();
