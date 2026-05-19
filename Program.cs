@@ -1,117 +1,142 @@
 using System;
 using System.Collections.Generic;
 
-namespace RestockFeeSystem
+namespace ShippingCalculator
 {
+    // Step 2: Custom Exception
+    class InvalidOrderException : Exception
+    {
+        public InvalidOrderException(string message) : base(message)
+        {
+        }
+    }
+
+    // Order class
+    class Order
+    {
+        public int OrderId { get; set; }
+        public double Weight { get; set; }
+        public string DestinationZone { get; set; }
+        public bool IsExpress { get; set; }
+        public int DiscountPercent { get; set; }
+    }
+
     class Program
     {
-        // Method to calculate fee
-        static double CalculateRestockFee(double itemPrice, int conditionCode)
+        // Step 3: Main shipping cost method
+        static double CalculateShippingCost(double weight, string destinationZone, bool isExpress)
         {
-            double multiplier = 0;
-
-            // Switch statement
-            switch (conditionCode)
+            // Step 4: Validation
+            if (weight <= 0)
             {
-                case 1:
-                    multiplier = 0.0;
-                    break;
-
-                case 2:
-                    multiplier = 0.10;
-                    break;
-
-                case 3:
-                    multiplier = 0.25;
-                    break;
-
-                case 4:
-                    multiplier = 0.50;
-                    break;
-
-                default:
-                    throw new ArgumentException("Invalid condition code!");
+                throw new InvalidOrderException("Weight must be greater than 0.");
             }
 
-            // Raw fee
-            double rawFee = itemPrice * multiplier;
-
-            // Manual rounding to nearest cent
-            double temp = rawFee * 100;
-
-            int rounded = (int)temp;
-
-            // if there is remaining decimal
-            if (temp > rounded)
+            if (destinationZone != "Local" &&
+                destinationZone != "Regional" &&
+                destinationZone != "National" &&
+                destinationZone != "International")
             {
-                rounded = rounded + 1;
+                throw new InvalidOrderException("Invalid destination zone.");
             }
 
-            double finalFee = rounded / 100.0;
+            double baseRate = 0;
 
-            return finalFee;
+            // Step 5: Determine base rate
+            switch (destinationZone)
+            {
+                case "Local":
+                    baseRate = 2.0;
+                    break;
+
+                case "Regional":
+                    baseRate = 5.0;
+                    break;
+
+                case "National":
+                    baseRate = 10.0;
+                    break;
+
+                case "International":
+                    baseRate = 25.0;
+                    break;
+            }
+
+            // Step 6: Calculate total cost
+            double totalCost = weight * baseRate;
+
+            if (isExpress)
+            {
+                totalCost *= 1.5;
+            }
+
+            return totalCost;
         }
 
-        // Process all returns
-        static double ProcessReturns(List<double> prices, List<int> conditions)
+        // Step 7: Overloaded method with discount
+        static double CalculateShippingCost(double weight, string destinationZone, bool isExpress, int discountPercent)
         {
-            double totalFees = 0;
+            double totalCost = CalculateShippingCost(weight, destinationZone, isExpress);
 
-            for (int i = 0; i < prices.Count; i++)
-            {
-                double fee = CalculateRestockFee(prices[i], conditions[i]);
+            totalCost -= totalCost * discountPercent / 100.0;
 
-                totalFees += fee;
-            }
-
-            return totalFees;
+            return totalCost;
         }
 
         static void Main(string[] args)
         {
-            // Sample data
-            List<double> prices = new List<double>()
+            // Step 8: Mock orders
+            List<Order> orders = new List<Order>()
             {
-                120.75,
-                89.99,
-                45.50,
-                100.10
+                new Order { OrderId = 101, Weight = 5.5, DestinationZone = "Local", IsExpress = false, DiscountPercent = 0 },
+                new Order { OrderId = 102, Weight = 3.2, DestinationZone = "Regional", IsExpress = true, DiscountPercent = 10 },
+                new Order { OrderId = 103, Weight = 8.0, DestinationZone = "National", IsExpress = false, DiscountPercent = 5 },
+                new Order { OrderId = 104, Weight = 2.5, DestinationZone = "International", IsExpress = true, DiscountPercent = 0 },
+                new Order { OrderId = 105, Weight = -4.0, DestinationZone = "Local", IsExpress = false, DiscountPercent = 0 }, // Invalid weight
+                new Order { OrderId = 106, Weight = 6.0, DestinationZone = "Interntional", IsExpress = true, DiscountPercent = 0 } // Invalid zone
             };
 
-            List<int> conditions = new List<int>()
+            // Step 9: Loop through orders
+            foreach (Order order in orders)
             {
-                2,
-                3,
-                4,
-                7 // invalid code intentionally
-            };
+                try
+                {
+                    double calculatedCost;
 
-            bool logFileOpened = false;
+                    // Step 7: Call overloaded method if discount exists
+                    if (order.DiscountPercent > 0)
+                    {
+                        calculatedCost = CalculateShippingCost(
+                            order.Weight,
+                            order.DestinationZone,
+                            order.IsExpress,
+                            order.DiscountPercent
+                        );
+                    }
+                    else
+                    {
+                        calculatedCost = CalculateShippingCost(
+                            order.Weight,
+                            order.DestinationZone,
+                            order.IsExpress
+                        );
+                    }
 
-            try
-            {
-                // simulate opening log file
-                logFileOpened = true;
-
-                Console.WriteLine("Log file opened.");
-
-                double total = ProcessReturns(prices, conditions);
-
-                Console.WriteLine("Total Fees: $" + total);
+                    // Step 10: Success message
+                    Console.WriteLine(
+                        $"Order ID: {order.OrderId} | Final Cost: ${calculatedCost:F2}"
+                    );
+                }
+                catch (InvalidOrderException ex)
+                {
+                    // Step 10: Error handling
+                    Console.WriteLine(
+                        $"Order ID: {order.OrderId} failed: {ex.Message}"
+                    );
+                }
             }
-            catch (ArgumentException ex)
-            {
-                Console.WriteLine("Error: " + ex.Message);
-            }
-            finally
-            {
-                // close resource
-                logFileOpened = false;
 
-                Console.WriteLine("Log file closed.");
-            }
-
-            Console.ReadLine();
+            Console.WriteLine("\nBatch processing completed.");
         }
     }
 }
