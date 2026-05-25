@@ -1,142 +1,168 @@
 using System;
 using System.Collections.Generic;
 
-namespace ShippingCalculator
+namespace ShippingCalculatorApp
 {
-    // Step 2: Custom Exception
-    class InvalidOrderException : Exception
+    // Custom Exception
+    public class InvalidShipmentException : Exception
     {
-        public InvalidOrderException(string message) : base(message)
+        public InvalidShipmentException(string message) : base(message)
         {
         }
     }
 
-    // Order class
-    class Order
+    // Shipment Model
+    public class Shipment
     {
-        public int OrderId { get; set; }
-        public double Weight { get; set; }
-        public string DestinationZone { get; set; }
-        public bool IsExpress { get; set; }
-        public int DiscountPercent { get; set; }
+        public int OrderId;
+        public double WeightKg;
+        public string DestinationZone;
+        public bool IsExpress;
+        public int DiscountPercent;
+
+        public Shipment(int orderId, double weightKg, string destinationZone, bool isExpress, int discountPercent = 0)
+        {
+            OrderId = orderId;
+            WeightKg = weightKg;
+            DestinationZone = destinationZone;
+            IsExpress = isExpress;
+            DiscountPercent = discountPercent;
+        }
     }
 
     class Program
     {
-        // Step 3: Main shipping cost method
-        static double CalculateShippingCost(double weight, string destinationZone, bool isExpress)
+        // First overloaded method
+        static double CalculateShippingCost(double weightKg, string destinationZone, bool isExpress)
         {
-            // Step 4: Validation
-            if (weight <= 0)
+            // Validation
+            if (weightKg <= 0)
             {
-                throw new InvalidOrderException("Weight must be greater than 0.");
+                throw new InvalidShipmentException("Weight must be greater than 0.");
             }
 
-            if (destinationZone != "Local" &&
-                destinationZone != "Regional" &&
-                destinationZone != "National" &&
-                destinationZone != "International")
+            if (destinationZone != "Domestic" &&
+                destinationZone != "International" &&
+                destinationZone != "Remote")
             {
-                throw new InvalidOrderException("Invalid destination zone.");
+                throw new InvalidShipmentException("Invalid destination zone.");
             }
 
             double baseRate = 0;
 
-            // Step 5: Determine base rate
-            switch (destinationZone)
+            // Zone pricing
+            if (destinationZone == "Domestic")
             {
-                case "Local":
-                    baseRate = 2.0;
-                    break;
-
-                case "Regional":
-                    baseRate = 5.0;
-                    break;
-
-                case "National":
-                    baseRate = 10.0;
-                    break;
-
-                case "International":
-                    baseRate = 25.0;
-                    break;
+                baseRate = 5.00;
+            }
+            else if (destinationZone == "International")
+            {
+                baseRate = 12.00;
+            }
+            else
+            {
+                baseRate = 20.00;
             }
 
-            // Step 6: Calculate total cost
-            double totalCost = weight * baseRate;
+            // Cost calculation
+            double totalCost = weightKg * baseRate;
 
-            if (isExpress)
+            // Express shipping
+            if (isExpress == true)
             {
-                totalCost *= 1.5;
+                totalCost = totalCost * 1.5;
             }
 
             return totalCost;
         }
 
-        // Step 7: Overloaded method with discount
-        static double CalculateShippingCost(double weight, string destinationZone, bool isExpress, int discountPercent)
+        // Second overloaded method with discount
+        static double CalculateShippingCost(double weightKg, string destinationZone, bool isExpress, int discountPercent)
         {
-            double totalCost = CalculateShippingCost(weight, destinationZone, isExpress);
+            double totalCost = CalculateShippingCost(weightKg, destinationZone, isExpress);
 
-            totalCost -= totalCost * discountPercent / 100.0;
+            if (discountPercent > 0)
+            {
+                totalCost = totalCost - (totalCost * discountPercent / 100.0);
+            }
 
             return totalCost;
         }
 
         static void Main(string[] args)
         {
-            // Step 8: Mock orders
-            List<Order> orders = new List<Order>()
+            // List of shipments
+            List<Shipment> shipments = new List<Shipment>()
             {
-                new Order { OrderId = 101, Weight = 5.5, DestinationZone = "Local", IsExpress = false, DiscountPercent = 0 },
-                new Order { OrderId = 102, Weight = 3.2, DestinationZone = "Regional", IsExpress = true, DiscountPercent = 10 },
-                new Order { OrderId = 103, Weight = 8.0, DestinationZone = "National", IsExpress = false, DiscountPercent = 5 },
-                new Order { OrderId = 104, Weight = 2.5, DestinationZone = "International", IsExpress = true, DiscountPercent = 0 },
-                new Order { OrderId = 105, Weight = -4.0, DestinationZone = "Local", IsExpress = false, DiscountPercent = 0 }, // Invalid weight
-                new Order { OrderId = 106, Weight = 6.0, DestinationZone = "Interntional", IsExpress = true, DiscountPercent = 0 } // Invalid zone
+                new Shipment(1001, 10.5, "Domestic", false),
+                new Shipment(1002, 5.2, "International", true),
+                new Shipment(1003, 3.0, "Remote", true, 10),
+                new Shipment(1004, -4.5, "Domestic", false), // Invalid weight
+                new Shipment(1005, 7.0, "domestic", true),   // Invalid zone (case-sensitive)
+                new Shipment(1006, 12.5, "International", false, 20)
             };
 
-            // Step 9: Loop through orders
-            foreach (Order order in orders)
+            foreach (Shipment shipment in shipments)
             {
                 try
                 {
-                    double calculatedCost;
+                    double calculatedCost = 0;
 
-                    // Step 7: Call overloaded method if discount exists
-                    if (order.DiscountPercent > 0)
+                    // Call correct overloaded method
+                    if (shipment.DiscountPercent > 0)
                     {
                         calculatedCost = CalculateShippingCost(
-                            order.Weight,
-                            order.DestinationZone,
-                            order.IsExpress,
-                            order.DiscountPercent
+                            shipment.WeightKg,
+                            shipment.DestinationZone,
+                            shipment.IsExpress,
+                            shipment.DiscountPercent
                         );
                     }
                     else
                     {
                         calculatedCost = CalculateShippingCost(
-                            order.Weight,
-                            order.DestinationZone,
-                            order.IsExpress
+                            shipment.WeightKg,
+                            shipment.DestinationZone,
+                            shipment.IsExpress
                         );
                     }
 
-                    // Step 10: Success message
                     Console.WriteLine(
-                        $"Order ID: {order.OrderId} | Final Cost: ${calculatedCost:F2}"
+                        $"Order ID: {shipment.OrderId} | Shipping Cost: ${calculatedCost:F2}"
                     );
                 }
-                catch (InvalidOrderException ex)
+                catch (InvalidShipmentException ex)
                 {
-                    // Step 10: Error handling
                     Console.WriteLine(
-                        $"Order ID: {order.OrderId} failed: {ex.Message}"
+                        $"Error in Order ID {shipment.OrderId}: {ex.Message}"
                     );
                 }
             }
 
-            Console.WriteLine("\nBatch processing completed.");
+            // ---------------------------------------------------
+            // INTENTIONAL MISTAKES FOR TESTING THE COMPILER
+            // Uncomment ONE at a time to test compiler errors
+            // ---------------------------------------------------
+
+            // 1. Type mismatch error
+            // int wrongValue = "Hello";
+
+            // 2. Missing semicolon
+            // Console.WriteLine("Compiler Test")
+
+            // 3. Undefined variable
+            // Console.WriteLine(totalPrice);
+
+            // 4. Wrong parameter type
+            // double test = CalculateShippingCost("5", "Domestic", true);
+
+            // 5. Invalid logical comparison
+            // if (5 = 10)
+            // {
+            //     Console.WriteLine("Error");
+            // }
+
+            Console.WriteLine("\nProcessing Finished.");
         }
     }
 }

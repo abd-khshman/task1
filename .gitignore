@@ -1,0 +1,15 @@
+# Visual Studio / .NET ignores
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.nupkg
+packages/
+.vscode/
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
